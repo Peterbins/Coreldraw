@@ -55,9 +55,3 @@ class CDRFontSearcher
     }
 }
 
-// use de class
-$directory = 'tijdelijk';
-$searchFont = 'Heineken'; // font that you search
-
-$fontSearcher = new CDRFontSearcher($directory, $searchFont);
-$fontSearcher->search();
