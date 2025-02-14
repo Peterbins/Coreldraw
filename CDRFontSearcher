@@ -1,0 +1,63 @@
+<?php
+
+
+declare(strict_types=1);
+
+class CDRFontSearcher
+{
+    private string $directory;
+    private string $searchFont;
+
+    public function __construct(string $directory, string $searchFont)
+    {
+        $this->directory = rtrim($directory, '/');
+        $this->searchFont = $searchFont;
+    }
+
+    public function search(): void
+    {
+        $cdrFiles = glob("{$this->directory}/*.cdr");
+
+        if (empty($cdrFiles)) {
+            echo "Geen CDR-bestanden gevonden in de map: {$this->directory}\n";
+            return;
+        }
+
+        foreach ($cdrFiles as $cdrFile) {
+            $this->processCDRFile($cdrFile);
+        }
+    }
+
+    private function processCDRFile(string $cdrFile): void
+    {
+        $zip = new ZipArchive();
+
+        if ($zip->open($cdrFile) === true) {
+            for ($i = 0; $i < $zip->numFiles; $i++) {
+                $filename = $zip->getNameIndex($i);
+
+                if (preg_match('/page\d+\.dat$/', $filename)) { // Zoek naar alle pageX.dat bestanden
+                    $fileContent = $zip->getFromIndex($i);
+
+                    if ($this->containsFont($fileContent)) {
+                        echo "Lettertype '{$this->searchFont}' gevonden in: $cdrFile\n";
+                        break; // Stop met zoeken in dit bestand als het font is gevonden
+                    }
+                }
+            }
+            $zip->close();
+        }
+    }
+
+    private function containsFont(string $content): bool
+    {
+        return preg_match('/"font"\s*:\s*"' . preg_quote($this->searchFont, '/') . '"/', $content) === 1;
+    }
+}
+
+// use de class
+$directory = 'tijdelijk';
+$searchFont = 'Heineken'; // font that you search
+
+$fontSearcher = new CDRFontSearcher($directory, $searchFont);
+$fontSearcher->search();
